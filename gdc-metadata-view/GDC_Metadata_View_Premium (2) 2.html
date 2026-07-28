@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GDC Metadata View</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
+
+:root{
+  --bg:#0A0C0E;
+  --panel:#12161A;
+  --panel2:#171C21;
+  --border:#232A30;
+  --accent:#34E8A0;
+  --accent-dim:rgba(52,232,160,0.12);
+  --diff-bg:#3d2a19;
+  --text:#E7ECEE;
+  --muted:#7C8790;
+  --mono:'JetBrains Mono', monospace;
+  --disp:'Space Grotesk', sans-serif;
+  --body:'Inter', sans-serif;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  min-height:100vh;
+  padding:32px 20px 40px;
+}
+.wrap{max-width:1600px;margin:0 auto;}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+h1{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:-0.01em;
+  margin:0;
+}
+h1 .gdc{color:var(--accent);}
+.sub{color:var(--muted);font-size:14px;margin:6px 0 28px;max-width:680px;}
+
+.drop{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:2px;
+  background:var(--panel);
+  padding:56px 24px;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.drop::before,.drop::after{
+  content:'';position:absolute;width:18px;height:18px;
+  border-color:var(--muted);opacity:.5;
+}
+.drop::before{top:10px;left:10px;border-top:1px solid;border-left:1px solid;}
+.drop::after{top:10px;right:10px;border-top:1px solid;border-right:1px solid;}
+.drop:hover{border-color:#2c343b;}
+.drop.drag{border-color:var(--accent);}
+
+.drop-icon{font-size:13px;color:var(--muted);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;}
+.drop-title{font-family:var(--disp);font-size:18px;font-weight:500;margin:0 0 6px;}
+.drop-hint{color:var(--muted);font-size:13px;}
+input[type=file]{display:none;}
+
+.status{display:none;margin-top:22px;color:var(--muted);font-family:var(--mono);font-size:13px;}
+.status.show{display:block;}
+
+.toolbar{
+  display:none;flex-direction:column;gap:12px;
+  margin:28px 0 16px;background:var(--panel2);padding:12px;border:1px solid var(--border);
+}
+.toolbar.show{display:flex;}
+.toolbar-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.filename{font-family:var(--mono);font-size:14px;color:var(--accent);word-break:break-all;}
+.controls-group{display:flex;align-items:center;gap:20px;font-size:13px;flex-wrap:wrap;}
+.checkbox-label{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);user-select:none;}
+.checkbox-label input{cursor:pointer;accent-color:var(--accent);}
+.actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;}
+.btn{
+  font-family:var(--body);font-size:12px;color:var(--text);
+  background:transparent;border:1px solid var(--border);border-radius:2px;
+  padding:7px 12px;cursor:pointer;transition:border-color .15s, color .15s;
+  white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn:disabled:hover{border-color:var(--border);color:var(--text);}
+.btn-primary{border-color:var(--accent);color:var(--accent);}
+.btn-primary:hover{background:var(--accent-dim);}
+
+.search-row{display:flex;align-items:center;gap:10px;}
+.search-input{
+  flex:1;max-width:360px;font-family:var(--mono);font-size:13px;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:8px 10px;
+}
+.search-input:focus{outline:none;border-color:var(--accent);}
+.search-input::placeholder{color:var(--muted);}
+.result-count{font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+.grid{display:none;margin-top:8px;}
+.grid.show{display:block;}
+
+.comp-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  background:var(--panel);
+  border:1px solid var(--border);
+}
+.comp-table th{
+  padding:12px;
+  text-align:left;
+  font-family:var(--mono);
+  color:var(--text);
+  border-left:1px solid var(--border);
+  background:var(--panel2);
+  font-weight:500;
+  position:relative;
+}
+.comp-table th:first-child{
+  color:var(--accent);
+  font-family:var(--disp);
+  font-size:14px;
+  width:280px;
+  border-left:none;
+}
+.th-file{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.th-file .th-name{word-break:break-all;}
+.th-file .th-tag{display:block;font-size:10px;color:var(--muted);font-weight:400;margin-top:3px;text-transform:none;font-family:var(--body);}
+.th-remove{
+  flex-shrink:0;cursor:pointer;color:var(--muted);border:1px solid var(--border);border-radius:2px;
+  width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;
+  background:var(--bg);
+}
+.th-remove:hover{color:#ff6b6b;border-color:#ff6b6b;}
+.comp-table td{
+  padding:8px 12px;
+  font-family:var(--mono);
+  border-left:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  word-break:break-word;
+  vertical-align:top;
+}
+.comp-table td:first-child{
+  font-family:var(--body);
+  color:var(--muted);
+  border-left:none;
+}
+.comp-table tr.section-row{cursor:pointer;user-select:none;}
+.comp-table tr.section-row td{
+  background:rgba(52,232,160,0.05);
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--accent);
+  font-weight:bold;
+  padding:10px 12px;
+  border-left:none;
+}
+.comp-table tr.section-row:hover td{background:rgba(52,232,160,0.1);}
+.cat-arrow{display:inline-block;width:12px;margin-right:4px;}
+.cat-count{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;}
+
+.highlight-diff td{background-color:var(--diff-bg) !important;}
+.hidden-row{display:none !important;}
+
+.footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.footer-brand{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;}
+.footer-brand .gdc{color:var(--accent);}
+.social{display:flex;gap:14px;}
+.social a{
+  display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;
+  font-family:var(--body);font-size:12px;border:1px solid var(--border);border-radius:2px;
+  padding:6px 10px;transition:border-color .15s,color .15s;
+}
+.social a:hover{border-color:var(--accent);color:var(--accent);}
+.social svg{width:14px;height:14px;fill:currentColor;flex-shrink:0;}
+
+/* Mod PDF (folosit doar in exportul off-screen) */
+.pdf-export-mode{background:#ffffff !important;color:#000000 !important;}
+.pdf-export-mode .comp-table{background:#ffffff !important;border:1px solid #cccccc !important;}
+.pdf-export-mode .comp-table th{background:#f0f0f0 !important;color:#000000 !important;border-left:1px solid #cccccc !important;}
+.pdf-export-mode .comp-table td{color:#111111 !important;border-left:1px solid #cccccc !important;border-bottom:1px solid #cccccc !important;}
+.pdf-export-mode .comp-table td:first-child{color:#555555 !important;}
+.pdf-export-mode .comp-table tr.section-row td{background:#e1f5fe !important;color:#0288d1 !important;}
+.pdf-export-mode .highlight-diff td{background-color:#fff3e0 !important;}
+.pdf-export-mode .th-remove{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="brand-dot"></div><span style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;">Analiza locala &middot; fara upload pe server</span></div>
+  <h1><span class="gdc">GDC</span> Metadata View</h1>
+  <p class="sub">Încarcă mai multe fișiere (video, audio, imagine, XML sidecar Sony) pentru lista completă de proprietăți tehnice și de producție, comparate side-by-side. XML-urile Sony (sidecar sau embedate direct în clip) se asociază automat și îți arată profilul Log / Gamma, plus o aproximare a ISO / expunere / diafragmă din pista per-cadru a camerei. Imaginile primesc EXIF/GPS complet, iar MP3-urile tag-uri ID3.</p>
+
+  <div class="drop" id="drop">
+    <div class="drop-icon">Fișiere media</div>
+    <p class="drop-title">Trage mai multe fișiere aici sau apasă pentru a le selecta</p>
+    <p class="drop-hint">Video, audio, imagine sau XML sidecar Sony &middot; poți adăuga fișiere suplimentare oricând, fără să pierzi ce ai încărcat deja</p>
+    <input type="file" id="fileInput" multiple accept="video/*,audio/*,image/*,.xml,text/xml,application/xml">
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="toolbar" id="toolbar">
+    <div class="toolbar-top">
+      <div class="controls-group">
+        <div class="filename" id="filenameLabel"></div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="highlightDiffs" checked> Evidențiază diferențele
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="hideIdentical"> Ascunde rândurile identice
+        </label>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="exportPdfBtn">Exportă PDF</button>
+        <button class="btn" id="exportBtn">Exportă JSON</button>
+        <button class="btn" id="resetBtn">Resetează tot</button>
+      </div>
+    </div>
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput" placeholder="Caută un parametru (ex: Gamma, Codec, ISO)...">
+      <span class="result-count" id="resultCount"></span>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="footer">
+    <div class="footer-brand"><span class="gdc">GDC</span> Metadata View &middot; creat de Cristi Gordas</div>
+    <div class="social">
+      <a href="https://www.facebook.com/cristiGDC" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>
+        Facebook
+      </a>
+      <a href="https://www.youtube.com/@cristigordas" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.4 3.5 12 3.5 12 3.5s-7.4 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c2 .6 9.4.6 9.4.6s7.4 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+        YouTube
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/mediainfo.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exifr/7.1.3/full.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* ======================= ELEMENTE / STARE ======================= */
+const drop=document.getElementById('drop');
+const fileInput=document.getElementById('fileInput');
+const statusEl=document.getElementById('status');
+const toolbar=document.getElementById('toolbar');
+const grid=document.getElementById('grid');
+const filenameLabel=document.getElementById('filenameLabel');
+const exportBtn=document.getElementById('exportBtn');
+const exportPdfBtn=document.getElementById('exportPdfBtn');
+const resetBtn=document.getElementById('resetBtn');
+const highlightDiffsCheckbox=document.getElementById('highlightDiffs');
+const hideIdenticalCheckbox=document.getElementById('hideIdentical');
+const searchInput=document.getElementById('searchInput');
+const resultCount=document.getElementById('resultCount');
+
+let filesDataList=[];         // [{ name, size, categories:{cat:{key:value}}, isXml, xmlMergedFrom }]
+const collapsedCats=new Set();
+let mediaInfoInstance=null;
+
+/* ordinea preferata a categoriilor in tabel; restul apar dupa, alfabetic */
+const CATEGORY_ORDER=['Fișier','General','Video','Audio','Subtitrări / Text','Capitole','Imagine (EXIF)','Audio (tag ID3)','Setări captură (rtmd, primul cadru)','Profil Cameră / Log (Sony XML)'];
+
+const MI_TIP_LABELS={General:'General',Video:'Video',Audio:'Audio',Text:'Subtitrări / Text',Menu:'Capitole',Image:'Imagine',Other:'Altele'};
+
+const MI_FIELD_LABELS={
+  Format:'Format',Format_Profile:'Profil format',Format_Version:'Versiune format',Format_Level:'Nivel profil',Format_Tier:'Tier profil',
+  FileSize:'Dimensiune fișier',Duration:'Durată',OverallBitRate:'Bitrate total',OverallBitRate_Mode:'Mod bitrate total',
+  FrameRate:'Cadre/s',FrameRate_Mode:'Mod cadre/s',IsStreamable:'Streamable',CodecID:'ID codec',CodecID_Compatible:'ID-uri compatibile',
+  Encoded_Application:'Aplicație encodare',Encoded_Library:'Librărie encodare',FileExtension:'Extensie',
+  Title:'Titlu',Album:'Album',Performer:'Artist / performer',Comment:'Comentariu',Copyright:'Drepturi de autor',
+  Encoded_Date:'Data codare',Tagged_Date:'Data etichetare',Recorded_Date:'Data înregistrare',Genre:'Gen',
+  Track_Name:'Nume piesă',Album_Performer:'Artist album',WrittenBy:'Compozitor',Producer:'Producător',Publisher:'Editor',
+  Width:'Lățime (px)',Height:'Înălțime (px)',PixelAspectRatio:'Raport aspect pixel',DisplayAspectRatio:'Raport aspect afișare',
+  BitRate:'Bitrate',BitRate_Mode:'Mod bitrate',BitDepth:'Adâncime culoare (biți)',ColorSpace:'Spațiu de culoare',
+  ChromaSubsampling:'Subeșantionare croma',ScanType:'Tip scanare',Rotation:'Rotație',colour_primaries:'Gamut culoare',
+  transfer_characteristics:'Curbă de transfer (HDR)',matrix_coefficients:'Matrice culoare',HDR_Format:'Format HDR',
+  HDR_Format_Compatibility:'Compatibilitate HDR',Language:'Limbă',Delay:'Întârziere',StreamSize:'Dimensiune flux',
+  colour_range:'Interval culoare',Channels:'Canale',ChannelPositions:'Poziții canale',ChannelLayout:'Configurație canale',
+  SamplingRate:'Frecvență eșantionare',SamplingCount:'Număr eșantioane',CompressionMode:'Mod compresie'
+};
+
+function fmtBytes(n){
+  if(n==null) return '';
+  const u=['B','KB','MB','GB']; let i=0;
+  while(n>=1024 && i<u.length-1){n/=1024;i++;}
+  return n.toFixed(i===0?0:2)+' '+u[i];
+}
+
+function humanizeAttr(key){
+  return key.replace(/[_-]/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().replace(/^./,c=>c.toUpperCase());
+}
+
+function getMediaInfo(){
+  if(mediaInfoInstance) return Promise.resolve(mediaInfoInstance);
+  return new Promise((resolve,reject)=>{
+    if(typeof MediaInfo==='undefined'){ reject(new Error('Libraria MediaInfo nu s-a incarcat.')); return; }
+    MediaInfo.default({format:'object',coverData:false},(mi)=>{
+      mediaInfoInstance=mi;
+      resolve(mi);
+    },(err)=>reject(err));
+  });
+}
+
+/* ======================= PARSER ISO-BMFF REAL (MP4/MOV): localizeaza precis boxul cu XML Sony si pista rtmd ======================= */
+const ISOBMFF_CONTAINER_TYPES=new Set(['moov','trak','mdia','minf','stbl','udta','edts','dinf','meta']);
+
+function readIsoBoxHeader(view,offset){
+  let size=view.getUint32(offset);
+  const type=String.fromCharCode(view.getUint8(offset+4),view.getUint8(offset+5),view.getUint8(offset+6),view.getUint8(offset+7));
+  let headerSize=8;
+  if(size===1){
+    const hi=view.getUint32(offset+8), lo=view.getUint32(offset+12);
+    size=hi*4294967296+lo;
+    headerSize=16;
+  } else if(size===0){
+    size=view.byteLength-offset;
+  }
+  return {type,size,headerSize,start:offset,contentStart:offset+headerSize,end:offset+size};
+}
+
+function tryExtractSonyXmlBox(view,box){
+  try{
+    const bytes=new Uint8Array(view.buffer,box.contentStart,box.end-box.contentStart);
+    const text=new TextDecoder('utf-8').decode(bytes);
+    const idx=text.indexOf('<?xml');
+    if(idx===-1) return null;
+    const nulIdx=text.indexOf('\u0000',idx);
+    return (nulIdx===-1?text.slice(idx):text.slice(idx,nulIdx)).trim();
+  }catch(e){ return null; }
+}
+
+function walkIsoBoxes(view,start,end,cb){
+  let off=start;
+  while(off+8<=end){
+    let box;
+    try{ box=readIsoBoxHeader(view,off); }catch(e){ break; }
+    if(box.size<8 || box.start+box.size>view.byteLength) break;
+    cb(box);
+    if(ISOBMFF_CONTAINER_TYPES.has(box.type)){
+      let childStart=box.contentStart;
+      if(box.type==='meta'){
+        if(tryExtractSonyXmlBox(view,box)===null) childStart+=4;
+        else childStart=null;
+      }
+      if(childStart!==null) walkIsoBoxes(view,childStart,box.end,cb);
+    }
+    off=box.end;
+  }
+}
+
+/* Decodor pentru pista rtmd (metadate per-cadru Sony, format binar KLV nedocumentat oficial,
+   dedus prin efort al comunitatii - vezi proiectul open-source telemetry-parser). Citim doar
+   primul cadru, ca sa dam o aproximare a setarilor de captura (ISO, expunere, diafragma). */
+const SONY_RTMD_EXPOSURE_MODE={
+  0x01010000:'Manual', 0x01020000:'Auto complet', 0x01030000:'Auto cu prioritate câștig',
+  0x01040000:'Auto cu prioritate diafragmă', 0x01050000:'Auto cu prioritate timp expunere'
+};
+const SONY_RTMD_FIELDS={
+  0x810B:{label:'ISO (rtmd, primul cadru)', parse:(view,off,len)=> len>=2 ? view.getUint16(off) : null},
+  0x8119:{label:'ISO (rtmd, primul cadru)', parse:(view,off,len)=> len>=4 ? view.getUint32(off) : null},
+  0xE301:{label:'ISO (rtmd, primul cadru)', parse:(view,off,len)=> len>=4 ? view.getUint32(off) : null},
+  0x8109:{label:'Timp expunere (rtmd, primul cadru)', parse:(view,off,len)=>{
+    if(len<8) return null;
+    const num=view.getUint32(off), den=view.getUint32(off+4);
+    return (num && den) ? ('1/'+Math.round(den/num)+' s') : null;
+  }},
+  0x8000:{label:'Diafragmă (rtmd, primul cadru)', parse:(view,off,len)=>{
+    if(len<2) return null;
+    const raw=view.getUint16(off);
+    return 'f/'+Math.pow(2,8*(1-raw/65536)).toFixed(1);
+  }},
+  0x810E:{label:'Balans de alb (rtmd, primul cadru)', parse:(view,off,len)=> len>=2 ? (view.getUint16(off)+' K') : null},
+  0x8100:{label:'Mod expunere (rtmd, primul cadru)', parse:(view,off,len)=>{
+    if(len<16) return null;
+    return SONY_RTMD_EXPOSURE_MODE[view.getUint32(off+12)]||null;
+  }},
+  0x8106:{label:'Cadre/s captură (rtmd, primul cadru)', parse:(view,off,len)=>{
+    if(len<8) return null;
+    const num=view.getUint32(off), den=view.getUint32(off+4);
+    return den ? (num/den).toFixed(2) : null;
+  }}
+};
+function parseSonyRtmdSample(view,offset,size){
+  let pos=offset; const end=offset+size;
+  if(size>=17 && view.getUint8(pos)===0x06){
+    pos+=16;
+    const b0=view.getUint8(pos);
+    pos += (b0 & 0x80) ? (1+(b0 & 0x7f)) : 1;
+  }
+  const out={};
+  while(pos+4<=end){
+    const tag=view.getUint16(pos), len=view.getUint16(pos+2);
+    pos+=4;
+    if(pos+len>end) break;
+    const field=SONY_RTMD_FIELDS[tag];
+    if(field){
+      try{ const val=field.parse(view,pos,len); if(val!=null && out[field.label]===undefined) out[field.label]=val; }catch(e){}
+    }
+    pos+=len;
+  }
+  return out;
+}
+
+async function extractEmbeddedIsoBmff(file){
+  const buf=await file.arrayBuffer();
+  const view=new DataView(buf);
+  let xmlText=null;
+  let trackHandlers=[];
+  let rtmdSample={offset:null,size:null};
+
+  walkIsoBoxes(view,0,buf.byteLength,box=>{
+    if(box.type==='hdlr'){
+      trackHandlers.push(String.fromCharCode(
+        view.getUint8(box.contentStart+8),view.getUint8(box.contentStart+9),
+        view.getUint8(box.contentStart+10),view.getUint8(box.contentStart+11)));
+    }
+    const lastHandler=trackHandlers[trackHandlers.length-1];
+    if(lastHandler==='rtmd' && rtmdSample.size===null && box.type==='stsz'){
+      try{
+        const sampleSize=view.getUint32(box.contentStart+4);
+        const sampleCount=view.getUint32(box.contentStart+8);
+        rtmdSample.size = sampleSize!==0 ? sampleSize : (sampleCount>0 ? view.getUint32(box.contentStart+12) : null);
+      }catch(e){}
+    }
+    if(lastHandler==='rtmd' && rtmdSample.offset===null && (box.type==='stco'||box.type==='co64')){
+      try{
+        const entryCount=view.getUint32(box.contentStart+4);
+        if(entryCount>0){
+          rtmdSample.offset = box.type==='stco' ? view.getUint32(box.contentStart+8) : Number(view.getBigUint64(box.contentStart+8));
+        }
+      }catch(e){}
+    }
+    if(box.type==='meta' && xmlText===null){
+      xmlText=tryExtractSonyXmlBox(view,box);
+    }
+  });
+
+  let rtmdInfo=null;
+  if(rtmdSample.offset!=null && rtmdSample.size){
+    try{ rtmdInfo=parseSonyRtmdSample(view,rtmdSample.offset,rtmdSample.size); }catch(e){}
+  }
+  return {xmlText,rtmdInfo};
+}
+
+/* ======================= EXTRAGERE METADATE XML SONY (DOM, comun pentru sidecar si XML embedat) ======================= */
+const SONY_ITEM_LABELS={
+  CaptureGammaEquation:'Curbă Gamma (Log)',
+  CaptureColorPrimaries:'Gamut culoare (Log)',
+  CodingEquations:'Ecuații de codare (matrice)',
+  CaptureFrameRate:'Cadre/s la captură',
+  CaptureBitDepth:'Adâncime biți captură',
+  CodingEIFlag:'Flag EI (Exposure Index)',
+  ExposureIndexOfPictureProfile:'Exposure Index (EI)',
+  WhiteBalance:'Balans de alb',
+  ColorTemperature:'Temperatură culoare',
+  ElectricalExtenderMagnification:'Extender electronic',
+  ImagerDimension:'Dimensiune senzor',
+  MasterBlackLevel:'Nivel negru master',
+  MasterGainAdjustment:'Ajustare câștig master',
+  ImagerScanMode:'Mod scanare senzor',
+  AutoSlowShutter:'Slow shutter automat',
+  NDFilter:'Filtru ND'
+};
+
+function parseSonyXmlIntoCat(text,cat){
+  let dom;
+  try{
+    dom=new DOMParser().parseFromString(text,'application/xml');
+    if(dom.querySelector('parsererror')) return false;
+  }catch(e){ return false; }
+
+  const getAttr=(el,...names)=>{ for(const n of names){ const v=el.getAttribute(n); if(v) return v; } return null; };
+
+  const device=dom.querySelector('Device');
+  if(device){
+    const man=getAttr(device,'manufacturer','Manufacturer');
+    const model=getAttr(device,'modelName','ModelName');
+    const serial=getAttr(device,'serialNo','SerialNo');
+    if(man) cat['Producător cameră']=man;
+    if(model) cat['Model cameră']=model;
+    if(serial) cat['Serie cameră']=serial;
+  }
+  const creationDate=dom.querySelector('CreationDate');
+  if(creationDate){ const v=getAttr(creationDate,'value','Value'); if(v) cat['Data creare clip']=v; }
+
+  const videoFrame=dom.querySelector('VideoFrame');
+  if(videoFrame){
+    const codec=getAttr(videoFrame,'videoCodec','VideoCodec');
+    const capFps=getAttr(videoFrame,'captureFps','CaptureFps');
+    const fmtFps=getAttr(videoFrame,'formatFps','FormatFps');
+    const aspect=getAttr(videoFrame,'aspectRatio','AspectRatio');
+    if(codec) cat['Codec video (XML)']=codec;
+    if(capFps) cat['FPS captură (XML)']=capFps;
+    if(fmtFps) cat['FPS format (XML)']=fmtFps;
+    if(aspect) cat['Aspect ratio (XML)']=aspect;
+  }
+  const videoLayout=dom.querySelector('VideoLayout');
+  if(videoLayout){
+    const w=getAttr(videoLayout,'pixel','Pixel');
+    const h=getAttr(videoLayout,'numOfVerticalLine','NumOfVerticalLine');
+    if(w && h) cat['Rezoluție (XML)']=w+' x '+h;
+  }
+  const ltc=dom.querySelector('LtcChangeTable');
+  if(ltc){
+    const fps=getAttr(ltc,'tcFps','TcFps');
+    const half=getAttr(ltc,'halfStep','HalfStep');
+    if(fps) cat['FPS timecode (XML)']=fps+(half==='true'?' (half-step)':'');
+  }
+
+  const items=dom.getElementsByTagName('Item');
+  Array.from(items).forEach(it=>{
+    const name=getAttr(it,'name','Name');
+    const value=getAttr(it,'value','Value');
+    if(!name||!value) return;
+    const label=SONY_ITEM_LABELS[name]||humanizeAttr(name);
+    if(cat[label]===undefined) cat[label]=value;
+  });
+  return true;
+}
+
+async function extractSonyMetadata(file,categories){
+  const isXml=/\.xml$/i.test(file.name) || file.type==='text/xml' || file.type==='application/xml';
+  const cat={};
+
+  if(isXml){
+    try{
+      const sliceSize=Math.min(file.size,2*1024*1024);
+      const buf=await file.slice(0,sliceSize).arrayBuffer();
+      const text=new TextDecoder('utf-8').decode(new Uint8Array(buf));
+      parseSonyXmlIntoCat(text,cat);
+    }catch(e){}
+  } else {
+    const isIsoBmff=file.type.includes('mp4')||file.type.includes('quicktime')||/\.(mp4|mov|m4v)$/i.test(file.name);
+    if(isIsoBmff){
+      try{
+        const {xmlText,rtmdInfo}=await extractEmbeddedIsoBmff(file);
+        if(xmlText) parseSonyXmlIntoCat(xmlText,cat);
+        if(rtmdInfo && Object.keys(rtmdInfo).length){
+          categories['Setări captură (rtmd, primul cadru)']=rtmdInfo;
+        }
+      }catch(e){}
+    }
+  }
+
+  if(Object.keys(cat).length){
+    categories['Profil Cameră / Log (Sony XML)'] = cat;
+  }
+}
+
+/* ======================= EXIF / GPS pentru imagini (exifr) ======================= */
+const EXIF_LABELS={
+  Make:'Producător cameră',Model:'Model cameră',LensModel:'Obiectiv',Software:'Software',
+  DateTimeOriginal:'Data capturare',ExposureTime:'Timp expunere',FNumber:'Diafragmă',
+  ISO:'ISO',FocalLength:'Distanță focală',ExposureProgram:'Program expunere',
+  WhiteBalance:'Balans de alb',Flash:'Bliț'
+};
+async function extractExifMetadata(file,categories){
+  if(!file.type.startsWith('image/') || typeof exifr==='undefined') return;
+  try{
+    const exif=await exifr.parse(file,{gps:true,xmp:true,iptc:true,tiff:true,ifd0:true,exif:true});
+    if(!exif) return;
+    const cat={};
+    for(const key in EXIF_LABELS){
+      if(exif[key]!==undefined && exif[key]!==null) cat[EXIF_LABELS[key]]=String(exif[key]);
+    }
+    if(exif.latitude && exif.longitude) cat['Coordonate GPS']=exif.latitude.toFixed(5)+', '+exif.longitude.toFixed(5);
+    const known=new Set(Object.keys(EXIF_LABELS).concat(['latitude','longitude']));
+    for(const key in exif){
+      if(!known.has(key) && exif[key]!==undefined && typeof exif[key]!=='object'){
+        cat[humanizeAttr(key)]=String(exif[key]);
+      }
+    }
+    if(Object.keys(cat).length) categories['Imagine (EXIF)']=cat;
+  }catch(e){}
+}
+
+/* ======================= Tag-uri ID3v2 pentru MP3 ======================= */
+function synchsafeToInt(b0,b1,b2,b3){ return (b0<<21)|(b1<<14)|(b2<<7)|b3; }
+async function extractId3Metadata(file,categories){
+  const isMp3=file.type==='audio/mpeg' || /\.mp3$/i.test(file.name);
+  if(!isMp3) return;
+  try{
+    const buf=await file.slice(0,Math.min(file.size,512*1024)).arrayBuffer();
+    const view=new DataView(buf);
+    if(view.getUint8(0)!==0x49||view.getUint8(1)!==0x44||view.getUint8(2)!==0x33) return;
+    const version=view.getUint8(3);
+    const size=synchsafeToInt(view.getUint8(6),view.getUint8(7),view.getUint8(8),view.getUint8(9));
+    const FRAME_MAP={TIT2:'Titlu',TPE1:'Artist',TALB:'Album',TYER:'An',TDRC:'Data',TCON:'Gen'};
+    const cat={};
+    let off=10; const end=Math.min(10+size,view.byteLength);
+    while(off+10<end){
+      const id=String.fromCharCode(view.getUint8(off),view.getUint8(off+1),view.getUint8(off+2),view.getUint8(off+3));
+      if(!/^[A-Z0-9]{4}$/.test(id)) break;
+      const frameSize = version>=4
+        ? synchsafeToInt(view.getUint8(off+4),view.getUint8(off+5),view.getUint8(off+6),view.getUint8(off+7))
+        : view.getUint32(off+4);
+      if(frameSize<=0||off+10+frameSize>view.byteLength) break;
+      if(FRAME_MAP[id]){
+        const encoding=view.getUint8(off+10);
+        const bytes=new Uint8Array(buf,off+11,frameSize-1);
+        let text='';
+        try{ text=(encoding===1||encoding===2)?new TextDecoder('utf-16').decode(bytes):new TextDecoder('utf-8').decode(bytes); }catch(e){}
+        cat[FRAME_MAP[id]]=text.replace(/\0/g,'').trim();
+      }
+      off+=10+frameSize;
+    }
+    if(Object.keys(cat).length) categories['Audio (tag ID3)']=cat;
+  }catch(e){}
+}
+
+/* ======================= ANALIZA UNUI FISIER ======================= */
+function isXmlFile(file){
+  return /\.xml$/i.test(file.name) || file.type==='text/xml' || file.type==='application/xml';
+}
+/* cheia de asociere clip <-> sidecar Sony: "C0012.MP4" + "C0012M01.XML" => "c0012" */
+function mediaBaseKey(name){ return name.replace(/\.[^.]+$/,'').toLowerCase(); }
+function xmlBaseKey(name){
+  let base=name.replace(/\.[^.]+$/,'');
+  base=base.replace(/M0?\d$/i,'');
+  return base.toLowerCase();
+}
+
+async function analyzeFile(file){
+  const categories={
+    'Fișier':{ 'Nume fișier':file.name, 'Dimensiune':fmtBytes(file.size) }
+  };
+
+  try{
+    const mi=await getMediaInfo();
+    const readChunk=(chunkSize,offset)=>new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=e=>resolve(new Uint8Array(e.target.result));
+      reader.onerror=reject;
+      reader.readAsArrayBuffer(file.slice(offset,offset+chunkSize));
+    });
+    const raw=await mi.analyzeData(()=>file.size,readChunk);
+    if(raw && raw.media && raw.media.track && raw.media.track.length){
+      raw.media.track.forEach(track=>{
+        const rawTip=track['@type']||'Altele';
+        const tip=MI_TIP_LABELS[rawTip]||rawTip;
+        if(!categories[tip]) categories[tip]={};
+        Object.keys(track).forEach(key=>{
+          if(key.startsWith('@')) return;
+          const v=track[key];
+          if(key==='extra' && v && typeof v==='object'){
+            Object.keys(v).forEach(ek=>{
+              if(v[ek]!==undefined && v[ek]!==null && v[ek]!==''){
+                const label=MI_FIELD_LABELS[ek]||humanizeAttr(ek);
+                if(categories[tip][label]===undefined) categories[tip][label]=v[ek];
+              }
+            });
+            return;
+          }
+          if(v!==undefined && v!==null && v!=='' && typeof v!=='object'){
+            const label=MI_FIELD_LABELS[key]||humanizeAttr(key);
+            if(categories[tip][label]===undefined) categories[tip][label]=v;
+          }
+        });
+      });
+    }
+  }catch(e){
+    categories['Fișier']['Notă']='MediaInfo nu a putut analiza acest fișier ('+(e.message||'eroare necunoscută')+')';
+  }
+
+  /* Extragerea inteligentă funcționează acum nativ pe orice tip de fișier selectat */
+  try{ await extractSonyMetadata(file,categories); }catch(e){}
+  try{ await extractExifMetadata(file,categories); }catch(e){}
+  try{ await extractId3Metadata(file,categories); }catch(e){}
+
+  return { name:file.name, size:file.size, categories, isXml:isXmlFile(file) };
+}
+
+/* asociaza un XML sidecar cu clipul lui media daca numele de baza coincid;
+   altfel adauga fisierul ca o coloana noua, de sine statatoare */
+function addEntryWithMerge(entry){
+  const key=entry.isXml ? xmlBaseKey(entry.name) : mediaBaseKey(entry.name);
+  const matchIdx=filesDataList.findIndex(e=>{
+    if(e.isXml===entry.isXml) return false; // trebuie un media + un xml, nu doua de acelasi fel
+    const existingKey=e.isXml ? xmlBaseKey(e.name) : mediaBaseKey(e.name);
+    return existingKey===key;
+  });
+
+  if(matchIdx!==-1){
+    const existing=filesDataList[matchIdx];
+    const mediaEntry=entry.isXml?existing:entry;
+    const xmlEntry=entry.isXml?entry:existing;
+    Object.keys(xmlEntry.categories).forEach(cat=>{
+      if(cat==='Fișier') return; // pastram doar Fisier-ul clipului media, nu al xml-ului
+      mediaEntry.categories[cat]={ ...(mediaEntry.categories[cat]||{}), ...xmlEntry.categories[cat] };
+    });
+    mediaEntry.xmlMergedFrom=xmlEntry.name;
+    filesDataList[matchIdx]=mediaEntry;
+    return;
+  }
+
+  /* evitam duplicate exacte (acelasi nume+dimensiune deja incarcat) */
+  const dup=filesDataList.some(e=>e.name===entry.name && e.size===entry.size);
+  if(!dup) filesDataList.push(entry);
+}
+
+/* ======================= DRAG & DROP / INPUT ======================= */
+drop.addEventListener('click',()=>fileInput.click());
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{
+  e.preventDefault();drop.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change',e=>{
+  if(e.target.files.length) handleFiles(e.target.files);
+  fileInput.value='';
+});
+
+resetBtn.addEventListener('click',()=>{
+  toolbar.classList.remove('show');
+  grid.classList.remove('show');
+  grid.innerHTML='';
+  statusEl.classList.remove('show');
+  fileInput.value='';
+  filesDataList=[];
+  collapsedCats.clear();
+  searchInput.value='';
+});
+
+highlightDiffsCheckbox.addEventListener('change',applyTableFilters);
+hideIdenticalCheckbox.addEventListener('change',applyTableFilters);
+searchInput.addEventListener('input',applyTableFilters);
+
+async function handleFiles(fileList){
+  const files=Array.from(fileList);
+  statusEl.classList.add('show');
+
+  for(let i=0;i<files.length;i++){
+    statusEl.textContent=`Se procesează (${i+1}/${files.length}): ${files[i].name}`;
+    try{
+      const entry=await analyzeFile(files[i]);
+      addEntryWithMerge(entry);
+    }catch(e){
+      console.error('Eroare la analiza fișierului '+files[i].name,e);
+    }
+  }
+
+  statusEl.classList.remove('show');
+  const xmlAsociate=filesDataList.filter(e=>e.xmlMergedFrom).length;
+  filenameLabel.textContent=`${filesDataList.length} fișier(e) încărcate`+(xmlAsociate?` · ${xmlAsociate} cu XML Sony asociat`:'');
+  renderDynamicTable();
+  toolbar.classList.add('show');
+}
+
+/* ======================= RANDARE TABEL ======================= */
+function orderedCategoryNames(allNames){
+  const known=CATEGORY_ORDER.filter(c=>allNames.has(c));
+  const rest=Array.from(allNames).filter(c=>!CATEGORY_ORDER.includes(c)).sort();
+  return known.concat(rest);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderDynamicTable(){
+  grid.innerHTML='';
+  if(!filesDataList.length){
+    toolbar.classList.remove('show');
+    grid.classList.remove('show');
+    return;
+  }
+
+  const allCategories=new Set();
+  filesDataList.forEach(entry=>{ Object.keys(entry.categories).forEach(c=>allCategories.add(c)); });
+  const categoryNames=orderedCategoryNames(allCategories);
+
+  let html='<div style="overflow-x:auto;"><table class="comp-table" id="comparisonTable">';
+
+  html+='<tr><th>Parametru tehnic</th>';
+  filesDataList.forEach((entry,idx)=>{
+    const tag=entry.xmlMergedFrom ? '+ '+escapeHtml(entry.xmlMergedFrom) : (entry.isXml?'XML sidecar':'');
+    html+=`<th><div class="th-file">
+        <div><span class="th-name">${escapeHtml(entry.name)}</span>${tag?`<span class="th-tag">${tag}</span>`:''}</div>
+        <span class="th-remove" data-remove-idx="${idx}" title="Elimină din comparație">&times;</span>
+      </div></th>`;
+  });
+  html+='</tr>';
+
+  categoryNames.forEach(catName=>{
+    const keysSet=new Set();
+    filesDataList.forEach(entry=>{
+      const cat=entry.categories[catName];
+      if(cat) Object.keys(cat).forEach(k=>keysSet.add(k));
+    });
+    if(!keysSet.size) return;
+    const orderedKeys=Array.from(keysSet).sort();
+
+    html+=`<tr class="section-row" data-cat="${escapeHtml(catName)}"><td colspan="${filesDataList.length+1}"><span class="cat-arrow">▾</span>${escapeHtml(catName)}<span class="cat-count">(${orderedKeys.length})</span></td></tr>`;
+
+    orderedKeys.forEach(keyName=>{
+      const valori=filesDataList.map(entry=>{
+        const cat=entry.categories[catName];
+        if(cat && cat[keyName]!==undefined && cat[keyName]!==null && cat[keyName]!==''){
+          return String(cat[keyName]);
+        }
+        return '';
+      });
+      const nonEmpty=valori.filter(v=>v!=='');
+      const esteDiferit=new Set(nonEmpty).size>1 || (nonEmpty.length>0 && nonEmpty.length<valori.length);
+
+      html+=`<tr class="data-row" data-diferit="${esteDiferit}">`;
+      html+=`<td>${escapeHtml(keyName)}</td>`;
+      valori.forEach(v=>{ html+=`<td>${v===''?'&mdash;':escapeHtml(v)}</td>`; });
+      html+='</tr>';
+    });
+  });
+
+  html+='</table></div>';
+  grid.innerHTML=html;
+  grid.classList.add('show');
+
+  applyTableFilters();
+}
+
+/* delegare evenimente: colaps categorii + eliminare coloana */
+grid.addEventListener('click',e=>{
+  const removeBtn=e.target.closest('[data-remove-idx]');
+  if(removeBtn){
+    const idx=parseInt(removeBtn.getAttribute('data-remove-idx'),10);
+    filesDataList.splice(idx,1);
+    if(!filesDataList.length){
+      filesDataList=[];
+      toolbar.classList.remove('show');
+      grid.classList.remove('show');
+      grid.innerHTML='';
+      return;
+    }
+    filenameLabel.textContent=`${filesDataList.length} fișier(e) încărcate`;
+    renderDynamicTable();
+    return;
+  }
+  const sectionRow=e.target.closest('tr.section-row');
+  if(sectionRow){
+    const catId=sectionRow.getAttribute('data-cat');
+    if(collapsedCats.has(catId)) collapsedCats.delete(catId); else collapsedCats.add(catId);
+    applyTableFilters();
+  }
+});
+
+function applyTableFilters(){
+  const highlight=highlightDiffsCheckbox.checked;
+  const hideIdentical=hideIdenticalCheckbox.checked;
+  const searchTerm=(searchInput.value||'').trim().toLowerCase();
+
+  const sectionRows=document.querySelectorAll('#comparisonTable tr.section-row');
+  let totalVisible=0;
+
+  sectionRows.forEach(sectionRow=>{
+    const catId=sectionRow.getAttribute('data-cat');
+    const collapsed=collapsedCats.has(catId);
+    let anyVisible=false;
+
+    let row=sectionRow.nextElementSibling;
+    while(row && row.classList.contains('data-row')){
+      const isDiferit=row.getAttribute('data-diferit')==='true';
+      let hidden;
+      if(searchTerm){
+        hidden=!row.textContent.toLowerCase().includes(searchTerm);
+      } else {
+        hidden=collapsed || (hideIdentical && !isDiferit);
+      }
+      row.classList.toggle('hidden-row',hidden);
+      row.classList.toggle('highlight-diff', isDiferit && highlight && !hidden);
+      if(!hidden){ anyVisible=true; totalVisible++; }
+      row=row.nextElementSibling;
+    }
+
+    sectionRow.classList.toggle('hidden-row', searchTerm ? !anyVisible : false);
+    const arrow=sectionRow.querySelector('.cat-arrow');
+    if(arrow) arrow.textContent=collapsed && !searchTerm ? '▸' : '▾';
+  });
+
+  resultCount.textContent = searchTerm ? `${totalVisible} rânduri găsite` : '';
+}
+
+/* ======================= EXPORT JSON ======================= */
+exportBtn.addEventListener('click',()=>{
+  if(!filesDataList.length) return;
+  const blob=new Blob([JSON.stringify(filesDataList,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='gdc-comparatie-metadate.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ======================= EXPORT PDF ======================= */
+function sliceCanvasToPdf(canvas,pdf,marginMm){
+  const pageWidthMm=pdf.internal.pageSize.getWidth();
+  const pageHeightMm=pdf.internal.pageSize.getHeight();
+  const usableWidthMm=pageWidthMm-marginMm*2;
+  const usableHeightMm=pageHeightMm-marginMm*2;
+  const pxPerMm=canvas.width/usableWidthMm;
+  const pageHeightPx=Math.max(1,Math.floor(usableHeightMm*pxPerMm));
+
+  let renderedPx=0, first=true;
+  while(renderedPx<canvas.height){
+    const sliceHeightPx=Math.min(pageHeightPx,canvas.height-renderedPx);
+    const sliceCanvas=document.createElement('canvas');
+    sliceCanvas.width=canvas.width;
+    sliceCanvas.height=sliceHeightPx;
+    const ctx=sliceCanvas.getContext('2d');
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,sliceCanvas.width,sliceCanvas.height);
+    ctx.drawImage(canvas,0,renderedPx,canvas.width,sliceHeightPx,0,0,canvas.width,sliceHeightPx);
+    const imgData=sliceCanvas.toDataURL('image/jpeg',0.98);
+    const sliceHeightMm=sliceHeightPx/pxPerMm;
+    if(!first) pdf.addPage();
+    pdf.addImage(imgData,'JPEG',marginMm,marginMm,usableWidthMm,sliceHeightMm);
+    first=false;
+    renderedPx+=sliceHeightPx;
+  }
+}
+
+exportPdfBtn.addEventListener('click',async ()=>{
+  const tabelElement=document.getElementById('comparisonTable');
+  if(!tabelElement) return;
+
+  const originalLabel=exportPdfBtn.textContent;
+  exportPdfBtn.disabled=true;
+  exportPdfBtn.textContent='Se generează...';
+
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:#0A0C0E;z-index:99998;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;color:#7C8790;font-size:13px;letter-spacing:.05em;';
+  overlay.textContent='Se generează raportul PDF...';
+  document.body.appendChild(overlay);
+
+  const exportRoot=document.createElement('div');
+  exportRoot.style.cssText='position:fixed;top:0;left:0;z-index:99999;background:#ffffff;padding:16px;';
+  exportRoot.innerHTML=`<div style="font-family:sans-serif;margin-bottom:14px;">
+      <div style="font-size:20px;font-weight:700;color:#111;">GDC Metadata View</div>
+      <div style="font-size:12px;color:#555;margin-top:4px;">Raport comparativ &middot; ${filesDataList.length} fișier(e) &middot; generat la ${new Date().toLocaleString('ro-RO')}</div>
+    </div>`;
+
+  const clone=tabelElement.cloneNode(true);
+  clone.classList.add('pdf-export-mode');
+  clone.querySelectorAll('.hidden-row').forEach(r=>r.remove());
+  exportRoot.appendChild(clone);
+  document.body.appendChild(exportRoot);
+
+  try{
+    if(typeof html2canvas==='undefined') throw new Error('html2canvas nu s-a încărcat (verifică conexiunea la internet).');
+    if(!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF nu s-a încărcat (verifică conexiunea la internet).');
+
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+    const fullWidth=exportRoot.scrollWidth;
+    const fullHeight=exportRoot.scrollHeight;
+    if(!fullWidth || !fullHeight) throw new Error('Elementul de export are dimensiune zero - nimic de exportat.');
+
+    /* apelam html2canvas DIRECT pe elementul real din pagina, ocolind wrapper-ul html2pdf.js
+       - acesta are o problema documentata oficial: cloneaza nodul intr-un container propriu,
+       ascuns, inainte de captura, iar acea clonare poate produce o pagina complet goala. */
+    const canvas=await html2canvas(exportRoot,{
+      scale:2,useCORS:true,backgroundColor:'#ffffff',
+      scrollX:0,scrollY:0,windowWidth:fullWidth,windowHeight:fullHeight
+    });
+
+    document.body.removeChild(exportRoot);
+    document.body.removeChild(overlay);
+
+    if(!canvas.width || !canvas.height) throw new Error('Captura canvas a ieșit goală.');
+
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({unit:'mm',format:'a3',orientation:'landscape'});
+    sliceCanvasToPdf(canvas,pdf,10);
+    pdf.save('GDC_Metadata_View_Comparatie.pdf');
+  }catch(e){
+    alert('Exportul PDF a eșuat: '+(e.message||e));
+    if(exportRoot.isConnected) document.body.removeChild(exportRoot);
+    if(overlay.isConnected) document.body.removeChild(overlay);
+  }finally{
+    exportPdfBtn.disabled=false;
+    exportPdfBtn.textContent=originalLabel;
+  }
+});
+</script>
+</body>
+</html>
