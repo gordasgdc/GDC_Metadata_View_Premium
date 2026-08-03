@@ -1,6 +1,12 @@
+**🌐 Limbă / Language / Idioma:** **Română** | [English](README.en.md) | [Español](README.es.md)
+
+---
+
 # GDC Metadata View
 
 **GDC Metadata View** este o aplicație web de nivel profesional, rulată direct în browser (100% procesare locală), destinată analizei și comparației detaliate side-by-side a metadatelor tehnice și de producție pentru fișiere media (video, audio, imagini și XML sidecar Sony).
+
+Aplicația are acum interfață disponibilă în **română, engleză și spaniolă**, cu un selector de limbă (RO/EN/ES) în antet. Preferința de limbă este salvată local în browser (`localStorage`) și este reținută la vizitele următoare.
 
 ---
 
@@ -16,15 +22,17 @@
   - Evidențiere automată a diferențelor între fișiere.
   - Ascundere rânduri identice pentru o inspecție rapidă.
   - Căutare instantanee după parametri (ex: *Gamma, Codec, ISO, FrameRate*).
+- **Interfață multilingvă (RO / EN / ES):** Selector de limbă în antet, cu preferința salvată în `localStorage`.
 - **Export Rapoarte:**
-  - **PDF:** Raport comparativ structurat și stilizat automat pe pagină A3 landscape.
-  - **JSON:** Export structurat al tuturor datelor extrase pentru procesare ulterioară.
+  - **PDF:** Raport comparativ structurat și stilizat automat pe pagină A3 landscape. Numele fișierului include limba selectată (ex. `metadata_report_RO.pdf`).
+  - **JSON:** Export structurat al tuturor datelor extrase pentru procesare ulterioară (ex. `metadata_report_RO.json`).
 
 ---
 
 ## 🛠️ Tehnologii Utilizate
 
-Aplicația este construită ca o aplicație **Single Page Application (SPA)**, utilizând:
+Aplicația este construită ca o aplicație **Single Page Application (SPA)**, 100% HTML + CSS + JavaScript vanilla (fără framework-uri), utilizând:
+
 - **HTML5 & CSS3 Vanilla** (interfață modernă cu stilizare completă, temă Dark UI).
 - **[MediaInfo.js](https://github.com/emscripten-ports/MediaInfoLib)** – parsare container multimedia.
 - **[exifr](https://github.com/MikeKovarik/exifr)** – extragere metadate EXIF & GPS din imagini.
@@ -35,16 +43,18 @@ Aplicația este construită ca o aplicație **Single Page Application (SPA)**, u
 ## 📖 Cum se folosește
 
 1. **Deschiderea aplicației:**
-   - Deschide fișierele prin dublu click pe `index.html` sau accesează link-ul generat prin **GitHub Pages**.
-2. **Încărcarea fișierelor:**
+   - Deschide fișierul prin dublu click pe `index.html` sau accesează link-ul generat prin **GitHub Pages**.
+2. **Alegerea limbii:**
+   - Folosește selectorul **RO / EN / ES** din antet. Preferința rămâne salvată în browser.
+3. **Încărcarea fișierelor:**
    - Trage (*drag & drop*) unul sau mai multe fișiere media (video, audio, imagini, XML Sony) în zona dedicată sau apasă pe casetă pentru a le selecta.
-3. **Analiză & Comparație:**
+4. **Analiză & Comparație:**
    - Fișierele vor apărea alăturate în tabel.
    - Bifează opțiunea **Evidențiază diferențele** pentru a observa rapid neconcordanțele.
    - Folosește căsuța de căutare pentru a găsi un parametru specific.
-4. **Export:**
-   - Apasă pe **Exportă PDF** pentru a descărca o fișă de inspecție tehnică.
-   - Apasă pe **Exportă JSON** pentru a salva datele brute.
+5. **Export:**
+   - Apasă pe **Exportă PDF** pentru a descărca o fișă de inspecție tehnică (`metadata_report_RO.pdf`).
+   - Apasă pe **Exportă JSON** pentru a salva datele brute (`metadata_report_RO.json`).
 
 ---
 
