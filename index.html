@@ -72,8 +72,13 @@ border-color:var(--muted);opacity:.5;
 .drop-title{font-family:var(--disp);font-size:18px;font-weight:500;margin:0 0 6px;}
 .drop-hint{color:var(--muted);font-size:13px;}
 input[type=file]{display:none;}
-.status{display:none;margin-top:22px;color:var(--muted);font-family:var(--mono);font-size:13px;}
-.status.show{display:block;}
+.demo-row{margin-top:14px;}
+.status{display:none;margin-top:22px;color:var(--muted);font-family:var(--mono);font-size:13px;align-items:center;gap:10px;}
+.status.show{display:flex;}
+.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.progress-bar-outer{flex:1;max-width:240px;height:4px;background:var(--panel2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.progress-bar-inner{height:100%;background:var(--accent);width:0%;transition:width .2s;}
 .toolbar{
 display:none;flex-direction:column;gap:12px;
 margin:28px 0 16px;background:var(--panel2);padding:12px;border:1px solid var(--border);
@@ -169,6 +174,15 @@ border-left:none;
 .cat-count{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;}
 .highlight-diff td{background-color:var(--diff-bg) !important;}
 .hidden-row{display:none !important;}
+.param-name{position:relative;cursor:help;border-bottom:1px dotted var(--muted);}
+.param-name:hover::after{
+content:attr(data-tooltip);
+position:absolute;left:0;top:100%;margin-top:6px;
+background:var(--panel2);color:var(--text);border:1px solid var(--border);
+padding:8px 10px;border-radius:2px;font-family:var(--body);font-size:12px;
+line-height:1.4;width:260px;z-index:50;white-space:normal;
+box-shadow:0 4px 14px rgba(0,0,0,0.4);
+}
 .footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--border);
 display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
 .footer-brand{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;}
@@ -210,7 +224,14 @@ padding:6px 10px;transition:border-color .15s,color .15s;
 <p class="drop-hint" data-i18n="dropHint">Video, audio, imagine sau XML sidecar Sony &middot; poți adăuga fișiere suplimentare oricând, fără să pierzi ce ai încărcat deja</p>
 <input type="file" id="fileInput" multiple accept="video/*,audio/*,image/*,.xml,text/xml,application/xml">
 </div>
-<div class="status" id="status"></div>
+<div class="demo-row">
+<button class="btn" id="loadDemoBtn" type="button" data-i18n="btnLoadDemo">Încarcă fișiere demo</button>
+</div>
+<div class="status" id="status">
+<div class="spinner"></div>
+<span id="statusText"></span>
+<div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBarInner"></div></div>
+</div>
 <div class="toolbar" id="toolbar">
 <div class="toolbar-top">
 <div class="controls-group">
@@ -225,6 +246,7 @@ padding:6px 10px;transition:border-color .15s,color .15s;
 <div class="actions">
 <button class="btn btn-primary" id="exportPdfBtn" data-i18n="btnExportPdf">Exportă PDF</button>
 <button class="btn" id="exportBtn" data-i18n="btnExportJson">Exportă JSON</button>
+<button class="btn" id="exportCsvBtn" data-i18n="btnExportCsv">Exportă CSV</button>
 <button class="btn" id="resetBtn" data-i18n="btnReset">Resetează tot</button>
 </div>
 </div>
@@ -283,7 +305,11 @@ reportGeneratedAt:'generat la',
 exportFailedPrefix:'Exportul PDF a eșuat: ',
 mediaInfoErrorPrefix:'MediaInfo nu a putut analiza acest fișier (',
 unknownErrorText:'eroare necunoscută',
-noteLabel:'Notă'
+noteLabel:'Notă',
+btnExportCsv:'Exportă CSV',
+btnLoadDemo:'Încarcă fișiere demo',
+csvCategoryColumn:'Categorie',
+demoFilesLoadedSuffix:'(include demo)'
 },
 en:{
 tagline:'Local analysis \u00b7 no server upload',
@@ -313,7 +339,11 @@ reportGeneratedAt:'generated on',
 exportFailedPrefix:'PDF export failed: ',
 mediaInfoErrorPrefix:'MediaInfo could not analyze this file (',
 unknownErrorText:'unknown error',
-noteLabel:'Note'
+noteLabel:'Note',
+btnExportCsv:'Export CSV',
+btnLoadDemo:'Load demo files',
+csvCategoryColumn:'Category',
+demoFilesLoadedSuffix:'(includes demo)'
 },
 es:{
 tagline:'Análisis local \u00b7 sin subida al servidor',
@@ -343,7 +373,11 @@ reportGeneratedAt:'generado el',
 exportFailedPrefix:'La exportación a PDF falló: ',
 mediaInfoErrorPrefix:'MediaInfo no pudo analizar este archivo (',
 unknownErrorText:'error desconocido',
-noteLabel:'Nota'
+noteLabel:'Nota',
+btnExportCsv:'Exportar CSV',
+btnLoadDemo:'Cargar archivos demo',
+csvCategoryColumn:'Categoría',
+demoFilesLoadedSuffix:'(incluye demo)'
 }
 };
 const LOCALE_CODE={ro:'ro-RO',en:'en-US',es:'es-ES'};
@@ -450,6 +484,85 @@ es:{
 'Artist':'Artista','An':'Año','Data':'Fecha'
 }
 };
+/* ======================= TOOLTIP-URI EXPLICATIVE (chei = eticheta canonica RO) ======================= */
+const TOOLTIP_DEFS={
+ro:{
+'Curbă Gamma (Log)':'Curba de codare a luminanței folosită la captură (ex. S-Log3, S-Log2). O curbă Log păstrează un range dinamic mai larg pentru color grading ulterior.',
+'Gamut culoare (Log)':'Spațiul de culoare/gamut folosit la captură (ex. S-Gamut3.Cine). Determină plaja de culori pe care senzorul o poate reprezenta.',
+'Exposure Index (EI)':'Sensibilitatea la care a fost expus semnalul în modul Log, diferită de ISO nativ — indică cum a fost "citit" senzorul la captură.',
+'Flag EI (Exposure Index)':'Marchează dacă înregistrarea a fost făcută folosind Exposure Index în loc de ISO standard.',
+'ISO (rtmd, primul cadru)':'Sensibilitatea ISO reală, citită din metadatele per-cadru (rtmd) ale primului cadru al clipului.',
+'ISO':'Sensibilitatea senzorului la lumină. Valori mai mari amplifică semnalul (util pe lumină puțină) dar cresc zgomotul.',
+'Diafragmă (rtmd, primul cadru)':'Valoarea f-stop a diafragmei obiectivului, citită din primul cadru al pistei de metadate rtmd.',
+'Diafragmă':'Valoarea f-stop a obiectivului — controlează cantitatea de lumină și adâncimea de câmp.',
+'Timp expunere (rtmd, primul cadru)':'Timpul de expunere (shutter) folosit la captura primului cadru.',
+'Timp expunere':'Durata cât senzorul a fost expus la lumină pentru un cadru.',
+'Balans de alb (rtmd, primul cadru)':'Temperatura de culoare (în Kelvin) setată pe cameră la momentul filmării.',
+'Balans de alb':'Temperatura de culoare setată pentru a reda corect albul în funcție de sursa de lumină.',
+'Cadre/s':'Numărul de cadre pe secundă (frame rate) al fișierului.',
+'Cadre/s captură (rtmd, primul cadru)':'Numărul de cadre pe secundă folosit efectiv la captură (poate diferi de frame rate-ul de livrare, ex. slow motion).',
+'Bitrate':'Cantitatea de date procesată pe secundă — un indicator al calității/compresiei video sau audio.',
+'Bitrate total':'Bitrate-ul global al fișierului, incluzând toate pistele (video, audio, metadate).',
+'Adâncime culoare (biți)':'Numărul de biți folosiți pentru fiecare canal de culoare (8-bit, 10-bit etc.) — afectează gradația de culoare.',
+'Spațiu de culoare':'Modelul de reprezentare a culorii folosit (ex. YUV, RGB).',
+'Subeșantionare croma':'Modul în care este redusă rezoluția informației de culoare față de luminanță (ex. 4:2:0, 4:2:2).',
+'Codec video (XML)':'Codecul video folosit la înregistrare, așa cum apare în XML-ul sidecar Sony.',
+'Format HDR':'Standardul HDR aplicat conținutului (ex. HDR10, HLG, Dolby Vision).',
+'Curbă de transfer (HDR)':'Funcția care mapează valorile de luminanță captate la valorile afișate — definește comportamentul HDR/SDR.'
+},
+en:{
+'Curbă Gamma (Log)':'The luminance encoding curve used at capture (e.g. S-Log3, S-Log2). A Log curve preserves a wider dynamic range for later color grading.',
+'Gamut culoare (Log)':'The color space/gamut used at capture (e.g. S-Gamut3.Cine). Determines the range of colors the sensor can represent.',
+'Exposure Index (EI)':'The sensitivity the signal was exposed at in Log mode, distinct from native ISO — indicates how the sensor was "read" at capture.',
+'Flag EI (Exposure Index)':'Marks whether the recording used Exposure Index instead of standard ISO.',
+'ISO (rtmd, primul cadru)':'The actual ISO sensitivity, read from the per-frame (rtmd) metadata of the clip\u2019s first frame.',
+'ISO':'The sensor\u2019s sensitivity to light. Higher values amplify the signal (useful in low light) but increase noise.',
+'Diafragmă (rtmd, primul cadru)':'The lens\u2019s f-stop value, read from the first frame of the rtmd metadata track.',
+'Diafragmă':'The lens\u2019s f-stop value — controls the amount of light and depth of field.',
+'Timp expunere (rtmd, primul cadru)':'The shutter/exposure time used to capture the first frame.',
+'Timp expunere':'How long the sensor was exposed to light for a frame.',
+'Balans de alb (rtmd, primul cadru)':'The color temperature (in Kelvin) set on the camera at the time of filming.',
+'Balans de alb':'The color temperature set to render white correctly for the light source.',
+'Cadre/s':'The number of frames per second (frame rate) of the file.',
+'Cadre/s captură (rtmd, primul cadru)':'The frame rate actually used at capture (may differ from delivery frame rate, e.g. slow motion).',
+'Bitrate':'The amount of data processed per second — an indicator of video/audio quality or compression.',
+'Bitrate total':'The overall bit rate of the file, including all tracks (video, audio, metadata).',
+'Adâncime culoare (biți)':'The number of bits used per color channel (8-bit, 10-bit, etc.) — affects color gradation.',
+'Spațiu de culoare':'The color representation model used (e.g. YUV, RGB).',
+'Subeșantionare croma':'How color information resolution is reduced relative to luminance (e.g. 4:2:0, 4:2:2).',
+'Codec video (XML)':'The video codec used at recording, as reported in the Sony sidecar XML.',
+'Format HDR':'The HDR standard applied to the content (e.g. HDR10, HLG, Dolby Vision).',
+'Curbă de transfer (HDR)':'The function mapping captured luminance values to displayed values — defines HDR/SDR behavior.'
+},
+es:{
+'Curbă Gamma (Log)':'La curva de codificación de luminancia usada en la captura (ej. S-Log3, S-Log2). Una curva Log conserva un rango dinámico más amplio para el color grading posterior.',
+'Gamut culoare (Log)':'El espacio de color/gamut usado en la captura (ej. S-Gamut3.Cine). Determina la gama de colores que el sensor puede representar.',
+'Exposure Index (EI)':'La sensibilidad a la que se expuso la señal en modo Log, distinta del ISO nativo — indica cómo se "leyó" el sensor en la captura.',
+'Flag EI (Exposure Index)':'Indica si la grabación usó Exposure Index en lugar del ISO estándar.',
+'ISO (rtmd, primul cadru)':'La sensibilidad ISO real, leída de los metadatos por cuadro (rtmd) del primer cuadro del clip.',
+'ISO':'La sensibilidad del sensor a la luz. Valores más altos amplifican la señal (útil con poca luz) pero aumentan el ruido.',
+'Diafragmă (rtmd, primul cadru)':'El valor f-stop del diafragma del objetivo, leído del primer cuadro de la pista de metadatos rtmd.',
+'Diafragmă':'El valor f-stop del objetivo — controla la cantidad de luz y la profundidad de campo.',
+'Timp expunere (rtmd, primul cadru)':'El tiempo de exposición (obturador) usado al capturar el primer cuadro.',
+'Timp expunere':'Cuánto tiempo estuvo expuesto el sensor a la luz para un cuadro.',
+'Balans de alb (rtmd, primul cadru)':'La temperatura de color (en Kelvin) configurada en la cámara al momento de filmar.',
+'Balans de alb':'La temperatura de color configurada para reproducir correctamente el blanco según la fuente de luz.',
+'Cadre/s':'El número de cuadros por segundo (frame rate) del archivo.',
+'Cadre/s captură (rtmd, primul cadru)':'La velocidad de fotogramas usada realmente en la captura (puede diferir de la de entrega, ej. cámara lenta).',
+'Bitrate':'La cantidad de datos procesados por segundo — un indicador de la calidad/compresión de video o audio.',
+'Bitrate total':'El bitrate global del archivo, incluyendo todas las pistas (video, audio, metadatos).',
+'Adâncime culoare (biți)':'El número de bits usados por canal de color (8-bit, 10-bit, etc.) — afecta la gradación de color.',
+'Spațiu de culoare':'El modelo de representación del color usado (ej. YUV, RGB).',
+'Subeșantionare croma':'Cómo se reduce la resolución de la información de color respecto a la luminancia (ej. 4:2:0, 4:2:2).',
+'Codec video (XML)':'El códec de video usado en la grabación, tal como aparece en el XML adjunto de Sony.',
+'Format HDR':'El estándar HDR aplicado al contenido (ej. HDR10, HLG, Dolby Vision).',
+'Curbă de transfer (HDR)':'La función que mapea los valores de luminancia capturados a los valores mostrados — define el comportamiento HDR/SDR.'
+}
+};
+function trTooltip(label){
+const map=TOOLTIP_DEFS[currentLang]||TOOLTIP_DEFS.ro;
+return map[label]||(TOOLTIP_DEFS.ro[label]||null);
+}
 let currentLang=localStorage.getItem('gdcLang')||'ro';
 function t(key){ return (TRANSLATIONS[currentLang]&&TRANSLATIONS[currentLang][key])!==undefined ? TRANSLATIONS[currentLang][key] : (TRANSLATIONS.ro[key]||key); }
 function trLabel(label){
@@ -470,10 +583,14 @@ if(filesDataList.length){ updateFilenameLabel(); renderDynamicTable(); }
 const drop=document.getElementById('drop');
 const fileInput=document.getElementById('fileInput');
 const statusEl=document.getElementById('status');
+const statusText=document.getElementById('statusText');
+const progressBarInner=document.getElementById('progressBarInner');
+const loadDemoBtn=document.getElementById('loadDemoBtn');
 const toolbar=document.getElementById('toolbar');
 const grid=document.getElementById('grid');
 const filenameLabel=document.getElementById('filenameLabel');
 const exportBtn=document.getElementById('exportBtn');
+const exportCsvBtn=document.getElementById('exportCsvBtn');
 const exportPdfBtn=document.getElementById('exportPdfBtn');
 const resetBtn=document.getElementById('resetBtn');
 const highlightDiffsCheckbox=document.getElementById('highlightDiffs');
@@ -926,20 +1043,48 @@ filenameLabel.textContent=text;
 async function handleFiles(fileList){
 const files=Array.from(fileList);
 statusEl.classList.add('show');
+progressBarInner.style.width='0%';
 for(let i=0;i<files.length;i++){
-statusEl.textContent=t('processingPrefix')+`(${i+1}/${files.length}): ${files[i].name}`;
+statusText.textContent=t('processingPrefix')+`(${i+1}/${files.length}): ${files[i].name}`;
 try{
 const entry=await analyzeFile(files[i]);
 addEntryWithMerge(entry);
 }catch(e){
 console.error('Eroare la analiza fișierului '+files[i].name,e);
 }
+progressBarInner.style.width=Math.round(((i+1)/files.length)*100)+'%';
 }
 statusEl.classList.remove('show');
 updateFilenameLabel();
 renderDynamicTable();
 toolbar.classList.add('show');
 }
+
+/* ======================= FISIERE DEMO (generate dinamic, nu stocate fizic) ======================= */
+function buildDemoEntry(o){
+return {
+name:o.name, size:o.size, isXml:false,
+categories:{
+'Fișier':{'Nume fișier':o.name,'Dimensiune':fmtBytes(o.size)},
+'General':{'Format':o.format,'Durată':o.duration,'Cadre/s':o.fps},
+'Video':{'Lățime (px)':o.width,'Înălțime (px)':o.height,'Bitrate':o.bitrate,'Adâncime culoare (biți)':o.bitDepth,'Spațiu de culoare':o.colorSpace},
+'Profil Cameră / Log (Sony XML)':{'Curbă Gamma (Log)':o.gamma,'Gamut culoare (Log)':o.gamut,'Exposure Index (EI)':o.ei,'Model cameră':o.camera},
+'Setări captură (rtmd, primul cadru)':{'ISO (rtmd, primul cadru)':o.iso,'Diafragmă (rtmd, primul cadru)':o.aperture,'Balans de alb (rtmd, primul cadru)':o.wb}
+}
+};
+}
+loadDemoBtn.addEventListener('click',()=>{
+const demos=[
+buildDemoEntry({name:'A001_C001_Interior_SLog3.MP4',size:2.4*1024*1024*1024,format:'XAVC S 4K',duration:'00:01:32',fps:'23.976',width:3840,height:2160,bitrate:'150 Mb/s',bitDepth:10,colorSpace:'YUV 4:2:0',gamma:'S-Log3',gamut:'S-Gamut3.Cine',ei:800,camera:'ILME-FX6',iso:800,aperture:'f/2.8',wb:'5600 K'}),
+buildDemoEntry({name:'A002_C014_Exterior_SLog2.MOV',size:3.1*1024*1024*1024,format:'QuickTime',duration:'00:02:10',fps:'25.000',width:1920,height:1080,bitrate:'223 Mb/s',bitDepth:10,colorSpace:'YUV 4:2:2',gamma:'S-Log2',gamut:'S-Gamut',ei:2000,camera:'PXW-FS7',iso:2000,aperture:'f/5.6',wb:'5600 K'}),
+buildDemoEntry({name:'B010_Portret_HLG.MP4',size:1.2*1024*1024*1024,format:'XAVC S-I 4K',duration:'00:00:45',fps:'50.000',width:3840,height:2160,bitrate:'280 Mb/s',bitDepth:10,colorSpace:'YUV 4:2:2',gamma:'HLG2',gamut:'BT.2020',ei:400,camera:'ILME-FX3',iso:400,aperture:'f/4.0',wb:'3200 K'})
+];
+demos.forEach(d=>addEntryWithMerge(d));
+updateFilenameLabel();
+filenameLabel.textContent+=' '+t('demoFilesLoadedSuffix');
+renderDynamicTable();
+toolbar.classList.add('show');
+});
 /* ======================= RANDARE TABEL ======================= */
 function orderedCategoryNames(allNames){
 const known=CATEGORY_ORDER.filter(c=>allNames.has(c));
@@ -989,7 +1134,12 @@ return '';
 const nonEmpty=valori.filter(v=>v!=='');
 const esteDiferit=new Set(nonEmpty).size>1 || (nonEmpty.length>0 && nonEmpty.length<valori.length);
 html+=`<tr class="data-row" data-diferit="${esteDiferit}">`;
-html+=`<td>${escapeHtml(trLabel(keyName))}</td>`;
+const tooltipText=trTooltip(keyName);
+const displayLabel=escapeHtml(trLabel(keyName));
+const keyCell=tooltipText
+? `<span class="param-name" data-tooltip="${escapeHtml(tooltipText)}">${displayLabel}</span>`
+: displayLabel;
+html+=`<td>${keyCell}</td>`;
 valori.forEach(v=>{ html+=`<td>${v===''?'&mdash;':escapeHtml(v)}</td>`; });
 html+='</tr>';
 });
@@ -1060,6 +1210,42 @@ const blob=new Blob([JSON.stringify(filesDataList,null,2)],{type:'application/js
 const a=document.createElement('a');
 a.href=URL.createObjectURL(blob);
 a.download=`metadata_report_${currentLang.toUpperCase()}.json`;
+a.click();
+URL.revokeObjectURL(a.href);
+});
+/* ======================= EXPORT CSV ======================= */
+function csvEscape(val){
+const s=String(val==null?'':val);
+if(/[",;\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+return s;
+}
+exportCsvBtn.addEventListener('click',()=>{
+if(!filesDataList.length) return;
+const allCategories=new Set();
+filesDataList.forEach(entry=>Object.keys(entry.categories).forEach(c=>allCategories.add(c)));
+const categoryNames=orderedCategoryNames(allCategories);
+const rows=[[t('csvCategoryColumn'),t('paramColumn'),...filesDataList.map(e=>e.name)]];
+categoryNames.forEach(catName=>{
+const keysSet=new Set();
+filesDataList.forEach(entry=>{
+const cat=entry.categories[catName];
+if(cat) Object.keys(cat).forEach(k=>keysSet.add(k));
+});
+if(!keysSet.size) return;
+Array.from(keysSet).sort().forEach(keyName=>{
+const row=[trLabel(catName),trLabel(keyName)];
+filesDataList.forEach(entry=>{
+const cat=entry.categories[catName];
+row.push(cat && cat[keyName]!=null ? String(cat[keyName]) : '');
+});
+rows.push(row);
+});
+});
+const csvContent='\uFEFF'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n');
+const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download=`metadata_report_${currentLang.toUpperCase()}.csv`;
 a.click();
 URL.revokeObjectURL(a.href);
 });
