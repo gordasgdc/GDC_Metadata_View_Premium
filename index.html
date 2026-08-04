@@ -41,6 +41,55 @@ transition:background .15s,color .15s;
 }
 .lang-btn:hover{color:var(--text);}
 .lang-btn.active{background:var(--accent-dim);color:var(--accent);}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.help-btn{
+display:flex;align-items:center;gap:6px;
+font-family:var(--body);font-size:12px;color:var(--muted);
+background:var(--panel);border:1px solid var(--border);border-radius:2px;
+padding:7px 12px;cursor:pointer;transition:border-color .15s,color .15s;
+}
+.help-btn:hover,.help-btn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none;}
+.help-btn svg{width:14px;height:14px;flex-shrink:0;}
+.modal-overlay{
+position:fixed;inset:0;background:rgba(5,7,8,0.72);
+display:flex;align-items:flex-start;justify-content:center;
+padding:5vh 16px;z-index:9999;overflow-y:auto;
+}
+.modal-overlay[hidden]{display:none;}
+.modal{
+background:var(--panel);border:1px solid var(--border);border-radius:2px;
+max-width:680px;width:100%;max-height:90vh;display:flex;flex-direction:column;
+box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-header{
+display:flex;align-items:center;justify-content:space-between;gap:12px;
+padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-header h2{font-family:var(--disp);font-size:18px;font-weight:700;margin:0;color:var(--text);}
+.modal-close{
+background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--muted);
+width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+font-size:16px;line-height:1;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s;
+}
+.modal-close:hover,.modal-close:focus-visible{border-color:#ff6b6b;color:#ff6b6b;outline:none;}
+.modal-body{padding:18px 20px 22px;overflow-y:auto;font-size:13px;line-height:1.6;color:var(--text);}
+.help-section-title{font-family:var(--disp);font-size:14px;font-weight:700;color:var(--accent);margin:20px 0 8px;}
+.help-section-title:first-child{margin-top:0;}
+.help-steps,.help-list{margin:0;padding-left:20px;}
+.help-steps li,.help-list li{margin-bottom:6px;color:var(--muted);}
+.help-steps li::marker,.help-list li::marker{color:var(--accent);}
+.help-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:4px;}
+.help-table th,.help-table td{padding:7px 10px;border:1px solid var(--border);text-align:left;}
+.help-table th{background:var(--panel2);color:var(--accent);font-weight:500;}
+.help-table td{color:var(--muted);}
+.help-kbd{
+font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--border);
+border-radius:2px;padding:1px 6px;color:var(--text);
+}
+@media (max-width:640px){
+.modal-overlay{padding:0;align-items:stretch;}
+.modal{max-width:none;max-height:none;height:100%;border-radius:0;border:none;}
+}
 h1{
 font-family:var(--disp);
 font-weight:700;
@@ -210,10 +259,16 @@ padding:6px 10px;transition:border-color .15s,color .15s;
 <div class="wrap">
 <div class="header-row">
 <div class="brand"><div class="brand-dot"></div><span style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;" data-i18n="tagline">Analiza locala &middot; fara upload pe server</span></div>
+<div class="header-actions">
+<button class="help-btn" id="helpBtn" type="button" aria-haspopup="dialog" aria-controls="helpOverlay">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none"/></svg>
+<span data-i18n="helpBtnLabel">Ajutor</span>
+</button>
 <div class="lang-switcher" id="langSwitcher" title="RO / EN / ES">
 <button class="lang-btn" data-lang="ro">RO</button>
 <button class="lang-btn" data-lang="en">EN</button>
 <button class="lang-btn" data-lang="es">ES</button>
+</div>
 </div>
 </div>
 <h1><span class="gdc">GDC</span> Metadata View</h1>
@@ -270,6 +325,17 @@ YouTube
 </div>
 </div>
 </div>
+
+<div class="modal-overlay" id="helpOverlay" hidden>
+<div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+<div class="modal-header">
+<h2 id="helpModalTitle">Ajutor</h2>
+<button class="modal-close" id="helpCloseBtn" type="button" aria-label="Închide">&times;</button>
+</div>
+<div class="modal-body" id="helpModalBody"></div>
+</div>
+</div>
+
 <script src="https://unpkg.com/mediainfo.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exifr/7.1.3/full.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -309,7 +375,9 @@ noteLabel:'Notă',
 btnExportCsv:'Exportă CSV',
 btnLoadDemo:'Încarcă fișiere demo',
 csvCategoryColumn:'Categorie',
-demoFilesLoadedSuffix:'(include demo)'
+demoFilesLoadedSuffix:'(include demo)',
+helpBtnLabel:'Ajutor',
+helpCloseAria:'Închide'
 },
 en:{
 tagline:'Local analysis \u00b7 no server upload',
@@ -343,7 +411,9 @@ noteLabel:'Note',
 btnExportCsv:'Export CSV',
 btnLoadDemo:'Load demo files',
 csvCategoryColumn:'Category',
-demoFilesLoadedSuffix:'(includes demo)'
+demoFilesLoadedSuffix:'(includes demo)',
+helpBtnLabel:'Help',
+helpCloseAria:'Close'
 },
 es:{
 tagline:'Análisis local \u00b7 sin subida al servidor',
@@ -377,7 +447,9 @@ noteLabel:'Nota',
 btnExportCsv:'Exportar CSV',
 btnLoadDemo:'Cargar archivos demo',
 csvCategoryColumn:'Categoría',
-demoFilesLoadedSuffix:'(incluye demo)'
+demoFilesLoadedSuffix:'(incluye demo)',
+helpBtnLabel:'Ayuda',
+helpCloseAria:'Cerrar'
 }
 };
 const LOCALE_CODE={ro:'ro-RO',en:'en-US',es:'es-ES'};
@@ -563,6 +635,131 @@ function trTooltip(label){
 const map=TOOLTIP_DEFS[currentLang]||TOOLTIP_DEFS.ro;
 return map[label]||(TOOLTIP_DEFS.ro[label]||null);
 }
+
+/* ======================= CONTINUT MODAL AJUTOR ======================= */
+const HELP_CONTENT={
+ro:{
+title:'Ajutor · Cum se folosește',
+sections:[
+{heading:'📖 Cum se folosește',type:'steps',items:[
+'Încarcă fișierele — trage-le în zona dedicată sau click pentru a le selecta',
+'Analizează — metadatele sunt extrase automat și afișate în tabel',
+'Compară — vezi diferențele evidențiate între fișiere',
+'Filtrează — folosește căutarea pentru a găsi un parametru specific',
+'Exportă — descarcă raportul în PDF, CSV sau JSON'
+]},
+{heading:'📁 Suport fișiere',type:'table',headers:['Tip','Formate'],rows:[
+['Video','MP4, MOV, MXF'],
+['Audio','MP3, WAV, AIFF'],
+['Imagine','JPEG, PNG, HEIC, TIFF'],
+['XML','Sony sidecar (.XML)']
+]},
+{heading:'🔍 Ce metadate extragem',type:'list',items:[
+'Video: Codec, Rezoluție, FrameRate, Bitrate, Gamma, Log Profile, Exposure Index',
+'Audio: Codec, SampleRate, Canale, Bitrate',
+'Imagine: EXIF, GPS, Model cameră, Obiectiv, ISO, Timp expunere',
+'XML Sony: S-Log, S-Gamut, Culoare, EI'
+]},
+{heading:'📤 Export',type:'list',items:[
+'PDF: Raport structurat, gata de print (A3 landscape)',
+'CSV: Pentru prelucrare în Excel',
+'JSON: Date brute pentru integrare'
+]},
+{heading:'💡 Scurtături',type:'shortcuts',items:[
+['Ctrl+F / Cmd+F','caută în tabel'],
+['Ctrl+Shift+H / Cmd+Shift+H','ascunde/afișează rândurile identice']
+]}
+]
+},
+en:{
+title:'Help · How to use',
+sections:[
+{heading:'📖 How to use',type:'steps',items:[
+'Load your files — drag them into the drop zone or click to select them',
+'Analyze — metadata is extracted automatically and shown in the table',
+'Compare — see the differences highlighted between files',
+'Filter — use search to find a specific parameter',
+'Export — download the report as PDF, CSV or JSON'
+]},
+{heading:'📁 File support',type:'table',headers:['Type','Formats'],rows:[
+['Video','MP4, MOV, MXF'],
+['Audio','MP3, WAV, AIFF'],
+['Image','JPEG, PNG, HEIC, TIFF'],
+['XML','Sony sidecar (.XML)']
+]},
+{heading:'🔍 Metadata we extract',type:'list',items:[
+'Video: Codec, Resolution, FrameRate, Bitrate, Gamma, Log Profile, Exposure Index',
+'Audio: Codec, SampleRate, Channels, Bitrate',
+'Image: EXIF, GPS, Camera model, Lens, ISO, Exposure time',
+'Sony XML: S-Log, S-Gamut, Color, EI'
+]},
+{heading:'📤 Export',type:'list',items:[
+'PDF: Structured, print-ready report (A3 landscape)',
+'CSV: For processing in Excel',
+'JSON: Raw data for integration'
+]},
+{heading:'💡 Shortcuts',type:'shortcuts',items:[
+['Ctrl+F / Cmd+F','search the table'],
+['Ctrl+Shift+H / Cmd+Shift+H','show/hide identical rows']
+]}
+]
+},
+es:{
+title:'Ayuda · Cómo se usa',
+sections:[
+{heading:'📖 Cómo se usa',type:'steps',items:[
+'Carga tus archivos — arrástralos a la zona indicada o haz clic para seleccionarlos',
+'Analiza — los metadatos se extraen automáticamente y se muestran en la tabla',
+'Compara — observa las diferencias resaltadas entre archivos',
+'Filtra — usa la búsqueda para encontrar un parámetro específico',
+'Exporta — descarga el informe en PDF, CSV o JSON'
+]},
+{heading:'📁 Formatos compatibles',type:'table',headers:['Tipo','Formatos'],rows:[
+['Video','MP4, MOV, MXF'],
+['Audio','MP3, WAV, AIFF'],
+['Imagen','JPEG, PNG, HEIC, TIFF'],
+['XML','Sony sidecar (.XML)']
+]},
+{heading:'🔍 Metadatos que extraemos',type:'list',items:[
+'Video: Códec, Resolución, FrameRate, Bitrate, Gamma, Log Profile, Exposure Index',
+'Audio: Códec, SampleRate, Canales, Bitrate',
+'Imagen: EXIF, GPS, Modelo de cámara, Objetivo, ISO, Tiempo de exposición',
+'XML Sony: S-Log, S-Gamut, Color, EI'
+]},
+{heading:'📤 Exportar',type:'list',items:[
+'PDF: Informe estructurado, listo para imprimir (A3 horizontal)',
+'CSV: Para procesar en Excel',
+'JSON: Datos en bruto para integración'
+]},
+{heading:'💡 Atajos de teclado',type:'shortcuts',items:[
+['Ctrl+F / Cmd+F','buscar en la tabla'],
+['Ctrl+Shift+H / Cmd+Shift+H','mostrar/ocultar filas idénticas']
+]}
+]
+}
+};
+function renderHelpContent(){
+const data=HELP_CONTENT[currentLang]||HELP_CONTENT.ro;
+let html='';
+data.sections.forEach(sec=>{
+html+=`<div class="help-section-title">${escapeHtml(sec.heading)}</div>`;
+if(sec.type==='steps'){
+html+='<ol class="help-steps">'+sec.items.map(i=>`<li>${escapeHtml(i)}</li>`).join('')+'</ol>';
+}else if(sec.type==='table'){
+html+='<table class="help-table"><tr>'+sec.headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')+'</tr>';
+sec.rows.forEach(r=>{html+='<tr>'+r.map(c=>`<td>${escapeHtml(c)}</td>`).join('')+'</tr>';});
+html+='</table>';
+}else if(sec.type==='list'){
+html+='<ul class="help-list">'+sec.items.map(i=>`<li>${escapeHtml(i)}</li>`).join('')+'</ul>';
+}else if(sec.type==='shortcuts'){
+html+='<ul class="help-list">'+sec.items.map(([combo,desc])=>`<li><span class="help-kbd">${escapeHtml(combo)}</span> — ${escapeHtml(desc)}</li>`).join('')+'</ul>';
+}
+});
+const modalBody=document.getElementById('helpModalBody');
+const modalTitle=document.getElementById('helpModalTitle');
+if(modalBody) modalBody.innerHTML=html;
+if(modalTitle) modalTitle.textContent=data.title;
+}
 let currentLang=localStorage.getItem('gdcLang')||'ro';
 function t(key){ return (TRANSLATIONS[currentLang]&&TRANSLATIONS[currentLang][key])!==undefined ? TRANSLATIONS[currentLang][key] : (TRANSLATIONS.ro[key]||key); }
 function trLabel(label){
@@ -578,6 +775,7 @@ document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=t(el.getAt
 document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{ el.placeholder=t(el.getAttribute('data-i18n-placeholder')); });
 document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-lang')===lang));
 if(filesDataList.length){ updateFilenameLabel(); renderDynamicTable(); }
+if(typeof helpOverlay!=='undefined' && helpOverlay && !helpOverlay.hidden) renderHelpContent();
 }
 /* ======================= ELEMENTE / STARE ======================= */
 const drop=document.getElementById('drop');
@@ -1331,6 +1529,65 @@ exportPdfBtn.textContent=originalLabel;
 document.querySelectorAll('.lang-btn').forEach(btn=>{
 btn.addEventListener('click',()=>applyLanguage(btn.getAttribute('data-lang')));
 });
+
+/* ======================= MODAL AJUTOR ======================= */
+const helpBtn=document.getElementById('helpBtn');
+const helpOverlay=document.getElementById('helpOverlay');
+const helpModal=document.getElementById('helpModal');
+const helpCloseBtn=document.getElementById('helpCloseBtn');
+let lastFocusedBeforeModal=null;
+
+function getFocusableInModal(){
+return Array.from(helpModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+.filter(el=>!el.disabled && el.offsetParent!==null);
+}
+function handleHelpKeydown(e){
+if(e.key==='Escape'){ closeHelp(); return; }
+if(e.key==='Tab'){
+const focusables=getFocusableInModal();
+if(!focusables.length) return;
+const first=focusables[0], last=focusables[focusables.length-1];
+if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+}
+function openHelp(){
+lastFocusedBeforeModal=document.activeElement;
+renderHelpContent();
+helpOverlay.hidden=false;
+document.body.style.overflow='hidden';
+const focusables=getFocusableInModal();
+(focusables[0]||helpCloseBtn).focus();
+document.addEventListener('keydown',handleHelpKeydown);
+}
+function closeHelp(){
+if(helpOverlay.hidden) return;
+helpOverlay.hidden=true;
+document.body.style.overflow='';
+document.removeEventListener('keydown',handleHelpKeydown);
+if(lastFocusedBeforeModal && typeof lastFocusedBeforeModal.focus==='function') lastFocusedBeforeModal.focus();
+}
+helpBtn.addEventListener('click',openHelp);
+helpCloseBtn.addEventListener('click',closeHelp);
+helpOverlay.addEventListener('click',e=>{ if(e.target===helpOverlay) closeHelp(); });
+
+/* ======================= SCURTATURI TASTATURA ======================= */
+document.addEventListener('keydown',e=>{
+const isMac=navigator.platform.toUpperCase().includes('MAC');
+const mod=isMac?e.metaKey:e.ctrlKey;
+if(!mod) return;
+if(!e.shiftKey && e.key.toLowerCase()==='f'){
+if(!helpOverlay.hidden) return;
+e.preventDefault();
+searchInput.focus();
+searchInput.select();
+}else if(e.shiftKey && e.key.toLowerCase()==='h'){
+e.preventDefault();
+hideIdenticalCheckbox.checked=!hideIdenticalCheckbox.checked;
+applyTableFilters();
+}
+});
+
 applyLanguage(currentLang);
 </script>
 </body>
